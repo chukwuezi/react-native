@@ -1,11 +1,13 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow
+ * @format
+ * @flow strict-local
  */
+
 'use strict';
 
 const React = require('React');
@@ -25,8 +27,8 @@ class BoxInspector extends React.Component<$FlowFixMeProps> {
   render() {
     const frame = this.props.frame;
     const style = this.props.style;
-    const margin = style && resolveBoxStyle('margin', style) || blank;
-    const padding = style && resolveBoxStyle('padding', style) || blank;
+    const margin = (style && resolveBoxStyle('margin', style)) || blank;
+    const padding = (style && resolveBoxStyle('padding', style)) || blank;
     return (
       <BoxContainer title="margin" titleStyle={styles.marginLabel} box={margin}>
         <BoxContainer title="padding" box={padding}>
@@ -35,7 +37,8 @@ class BoxInspector extends React.Component<$FlowFixMeProps> {
               ({(frame.left || 0).toFixed(1)}, {(frame.top || 0).toFixed(1)})
             </Text>
             <Text style={styles.innerText}>
-              {(frame.width || 0).toFixed(1)} &times; {(frame.height || 0).toFixed(1)}
+              {(frame.width || 0).toFixed(1)} &times;{' '}
+              {(frame.height || 0).toFixed(1)}
             </Text>
           </View>
         </BoxContainer>
@@ -50,9 +53,10 @@ class BoxContainer extends React.Component<$FlowFixMeProps> {
     return (
       <View style={styles.box}>
         <View style={styles.row}>
-          {
-            }
-          <Text style={[this.props.titleStyle, styles.label]}>{this.props.title}</Text>
+          {}
+          <Text style={[this.props.titleStyle, styles.label]}>
+            {this.props.title}
+          </Text>
           <Text style={styles.boxText}>{box.top}</Text>
         </View>
         <View style={styles.row}>
@@ -82,12 +86,6 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'left',
     top: -3,
-  },
-  buffer: {
-    fontSize: 10,
-    color: 'yellow',
-    flex: 1,
-    textAlign: 'center',
   },
   innerText: {
     color: 'yellow',

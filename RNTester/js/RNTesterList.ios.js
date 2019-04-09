@@ -1,18 +1,16 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
+ * @format
  * @flow
  */
+
 'use strict';
 
-export type RNTesterExample = {
-  key: string,
-  module: Object,
-  supportsTVOS: boolean
-};
+import type {RNTesterExample} from 'RNTesterTypes';
 
 const ComponentExamples: Array<RNTesterExample> = [
   {
@@ -61,21 +59,6 @@ const ComponentExamples: Array<RNTesterExample> = [
     supportsTVOS: true,
   },
   {
-    key: 'ListViewExample',
-    module: require('./ListViewExample'),
-    supportsTVOS: true,
-  },
-  {
-    key: 'ListViewGridLayoutExample',
-    module: require('./ListViewGridLayoutExample'),
-    supportsTVOS: true,
-  },
-  {
-    key: 'ListViewPagingExample',
-    module: require('./ListViewPagingExample'),
-    supportsTVOS: true,
-  },
-  {
     key: 'MaskedViewExample',
     module: require('./MaskedViewExample'),
     supportsTVOS: true,
@@ -88,21 +71,6 @@ const ComponentExamples: Array<RNTesterExample> = [
   {
     key: 'MultiColumnExample',
     module: require('./MultiColumnExample'),
-    supportsTVOS: true,
-  },
-  {
-    key: 'NavigatorIOSColorsExample',
-    module: require('./NavigatorIOSColorsExample'),
-    supportsTVOS: false,
-  },
-  {
-    key: 'NavigatorIOSBarStyleExample',
-    module: require('./NavigatorIOSBarStyleExample'),
-    supportsTVOS: false,
-  },
-  {
-    key: 'NavigatorIOSExample',
-    module: require('./NavigatorIOSExample'),
     supportsTVOS: true,
   },
   {
@@ -124,6 +92,11 @@ const ComponentExamples: Array<RNTesterExample> = [
     key: 'RefreshControlExample',
     module: require('./RefreshControlExample'),
     supportsTVOS: false,
+  },
+  {
+    key: 'ScrollViewSimpleExample',
+    module: require('./ScrollViewSimpleExample'),
+    supportsTVOS: true,
   },
   {
     key: 'SafeAreaViewExample',
@@ -156,28 +129,8 @@ const ComponentExamples: Array<RNTesterExample> = [
     supportsTVOS: false,
   },
   {
-    key: 'SwipeableFlatListExample',
-    module: require('./SwipeableFlatListExample'),
-    supportsTVOS: false,
-  },
-  {
-    key: 'SwipeableListViewExample',
-    module: require('./SwipeableListViewExample'),
-    supportsTVOS: false,
-  },
-  {
     key: 'SwitchExample',
     module: require('./SwitchExample'),
-    supportsTVOS: false,
-  },
-  {
-    key: 'TabBarIOSExample',
-    module: require('./TabBarIOSExample'),
-    supportsTVOS: true,
-  },
-  {
-    key: 'TabBarIOSBarStyleExample',
-    module: require('./TabBarIOSBarStyleExample'),
     supportsTVOS: false,
   },
   {
@@ -205,14 +158,14 @@ const ComponentExamples: Array<RNTesterExample> = [
     module: require('./ViewExample'),
     supportsTVOS: true,
   },
-  {
-    key: 'WebViewExample',
-    module: require('./WebViewExample'),
-    supportsTVOS: false,
-  },
 ];
 
 const APIExamples: Array<RNTesterExample> = [
+  {
+    key: 'AccessibilityExample',
+    module: require('./AccessibilityExample'),
+    supportsTVOS: false,
+  },
   {
     key: 'AccessibilityIOSExample',
     module: require('./AccessibilityIOSExample'),
@@ -221,11 +174,6 @@ const APIExamples: Array<RNTesterExample> = [
   {
     key: 'ActionSheetIOSExample',
     module: require('./ActionSheetIOSExample'),
-    supportsTVOS: true,
-  },
-  {
-    key: 'AlertExample',
-    module: require('./AlertExample').AlertExample,
     supportsTVOS: true,
   },
   {
@@ -274,14 +222,14 @@ const APIExamples: Array<RNTesterExample> = [
     supportsTVOS: false,
   },
   {
+    key: 'CrashExample',
+    module: require('./CrashExample'),
+    supportsTVOS: false,
+  },
+  {
     key: 'Dimensions',
     module: require('./DimensionsExample'),
     supportsTVOS: true,
-  },
-  {
-    key: 'GeolocationExample',
-    module: require('./GeolocationExample'),
-    supportsTVOS: false,
   },
   {
     key: 'ImageEditingExample',

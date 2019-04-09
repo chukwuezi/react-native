@@ -1,11 +1,13 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow
+ * @format
+ * @flow strict-local
  */
+
 'use strict';
 
 const React = require('React');
@@ -22,14 +24,25 @@ class StyleInspector extends React.Component<$FlowFixMeProps> {
     return (
       <View style={styles.container}>
         <View>
-          {names.map(name => <Text key={name} style={styles.attr}>{name}:</Text>)}
+          {names.map(name => (
+            <Text key={name} style={styles.attr}>
+              {name}:
+            </Text>
+          ))}
         </View>
 
         <View>
           {names.map(name => {
-            const value = typeof this.props.style[name] === 'object' ? JSON.stringify(this.props.style[name]) : this.props.style[name];
-            return <Text key={name} style={styles.value}>{value}</Text>;
-          } ) }
+            const value =
+              typeof this.props.style[name] === 'object'
+                ? JSON.stringify(this.props.style[name])
+                : this.props.style[name];
+            return (
+              <Text key={name} style={styles.value}>
+                {value}
+              </Text>
+            );
+          })}
         </View>
       </View>
     );
@@ -39,11 +52,6 @@ class StyleInspector extends React.Component<$FlowFixMeProps> {
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
   },
   attr: {
     fontSize: 10,
@@ -61,4 +69,3 @@ const styles = StyleSheet.create({
 });
 
 module.exports = StyleInspector;
-

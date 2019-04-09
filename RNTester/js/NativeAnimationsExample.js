@@ -1,11 +1,13 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
+ * @format
  * @flow
  */
+
 'use strict';
 
 const React = require('react');
@@ -19,7 +21,7 @@ const {
   Slider,
 } = ReactNative;
 
-var AnimatedSlider = Animated.createAnimatedComponent(Slider);
+const AnimatedSlider = Animated.createAnimatedComponent(Slider);
 
 class Tester extends React.Component<$FlowFixMeProps, $FlowFixMeState> {
   state = {
@@ -30,9 +32,10 @@ class Tester extends React.Component<$FlowFixMeProps, $FlowFixMeState> {
   current = 0;
 
   onPress = () => {
-    const animConfig = this.current && this.props.reverseConfig
-      ? this.props.reverseConfig
-      : this.props.config;
+    const animConfig =
+      this.current && this.props.reverseConfig
+        ? this.props.reverseConfig
+        : this.props.config;
     this.current = this.current ? 0 : 1;
     const config: Object = {
       ...animConfig,
@@ -62,9 +65,7 @@ class Tester extends React.Component<$FlowFixMeProps, $FlowFixMeState> {
           <View>
             <Text>JavaScript:</Text>
           </View>
-          <View style={styles.row}>
-            {this.props.children(this.state.js)}
-          </View>
+          <View style={styles.row}>{this.props.children(this.state.js)}</View>
         </View>
       </TouchableWithoutFeedback>
     );
@@ -155,7 +156,10 @@ class LoopExample extends React.Component<{}, $FlowFixMeState> {
 }
 
 const RNTesterSettingSwitchRow = require('RNTesterSettingSwitchRow');
-class InternalSettings extends React.Component<{}, {busyTime: number | string, filteredStall: number}> {
+class InternalSettings extends React.Component<
+  {},
+  {busyTime: number | string, filteredStall: number},
+> {
   _stallInterval: ?number;
   render() {
     return (
@@ -170,8 +174,7 @@ class InternalSettings extends React.Component<{}, {busyTime: number | string, f
             this._stallInterval = setInterval(() => {
               const start = Date.now();
               console.warn('burn CPU');
-              while (Date.now() - start < 100) {
-              }
+              while (Date.now() - start < 100) {}
             }, 300);
           }}
           onDisable={() => {
@@ -191,8 +194,8 @@ class InternalSettings extends React.Component<{}, {busyTime: number | string, f
               onStall: ({busyTime}) =>
                 this.setState(state => ({
                   busyTime,
-                  filteredStall: (state.filteredStall || 0) * 0.97 +
-                    busyTime * 0.03,
+                  filteredStall:
+                    (state.filteredStall || 0) * 0.97 + busyTime * 0.03,
                 })),
             });
           }}
@@ -200,11 +203,12 @@ class InternalSettings extends React.Component<{}, {busyTime: number | string, f
             console.warn('Cannot disable yet....');
           }}
         />
-        {this.state &&
+        {this.state && (
           <Text>
             {`JS Stall filtered: ${Math.round(this.state.filteredStall)}, `}
             {`last: ${this.state.busyTime}`}
-          </Text>}
+          </Text>
+        )}
       </View>
     );
   }
@@ -216,24 +220,26 @@ class EventExample extends React.Component<{}, $FlowFixMeState> {
   };
 
   render() {
-    const opacity = this.state.scrollX.interpolate({
-      inputRange: [0, 200],
-      outputRange: [1, 0],
-    });
     return (
       <View>
         <Animated.View
           style={[
             styles.block,
             {
-              opacity,
+              transform: [
+                {
+                  rotate: this.state.scrollX.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ['0deg', '1deg'],
+                  }),
+                },
+              ],
             },
           ]}
         />
         <Animated.ScrollView
           horizontal
           style={{height: 100, marginTop: 16}}
-          scrollEventThrottle={16}
           onScroll={Animated.event(
             [{nativeEvent: {contentOffset: {x: this.state.scrollX}}}],
             {useNativeDriver: true},
@@ -243,8 +249,9 @@ class EventExample extends React.Component<{}, $FlowFixMeState> {
               width: 600,
               backgroundColor: '#eee',
               justifyContent: 'center',
+              paddingLeft: 100,
             }}>
-            <Text>Scroll me!</Text>
+            <Text>Scroll me sideways!</Text>
           </View>
         </Animated.ScrollView>
       </View>
@@ -252,7 +259,10 @@ class EventExample extends React.Component<{}, $FlowFixMeState> {
   }
 }
 
-class TrackingExample extends React.Component<$FlowFixMeProps, $FlowFixMeState> {
+class TrackingExample extends React.Component<
+  $FlowFixMeProps,
+  $FlowFixMeState,
+> {
   state = {
     native: new Animated.Value(0),
     toNative: new Animated.Value(0),
@@ -286,10 +296,19 @@ class TrackingExample extends React.Component<$FlowFixMeProps, $FlowFixMeState> 
     this.state.toJS.setValue(nextValue);
   };
 
+  /* $FlowFixMe(>=0.85.0 site=react_native_fb) This comment suppresses an error
+   * found when Flow v0.85 was deployed. To see the error, delete this comment
+   * and run Flow. */
   renderBlock = (anim, dest) => [
-    <Animated.View key="line" style={[styles.line, { transform: [{ translateX: dest }]}]}/>,
-    <Animated.View key="block" style={[styles.block, { transform: [{ translateX: anim }]}]}/>,
-  ]
+    <Animated.View
+      key="line"
+      style={[styles.line, {transform: [{translateX: dest}]}]}
+    />,
+    <Animated.View
+      key="block"
+      style={[styles.block, {transform: [{translateX: anim}]}]}
+    />,
+  ];
 
   render() {
     return (
@@ -572,7 +591,7 @@ exports.examples = [
     title: 'translateX => Animated.spring (stiffness/damping/mass)',
     render: function() {
       return (
-        <Tester type="spring" config={{stiffness: 1000, damping: 500, mass: 3 }}>
+        <Tester type="spring" config={{stiffness: 1000, damping: 500, mass: 3}}>
           {anim => (
             <Animated.View
               style={[
@@ -621,7 +640,7 @@ exports.examples = [
     },
   },
   {
-    title: 'Drive custom property',
+    title: 'Drive custom property (tap to animate)',
     render: function() {
       return (
         <Tester type="timing" config={{duration: 1000}}>

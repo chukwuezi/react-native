@@ -1,11 +1,13 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow
+ * @format
+ * @flow strict-local
  */
+
 'use strict';
 
 const React = require('React');
@@ -23,13 +25,8 @@ class BorderBox extends React.Component<$FlowFixMeProps> {
       borderLeftWidth: box.left,
       borderRightWidth: box.right,
     };
-    return (
-      <View style={[style, this.props.style]}>
-        {this.props.children}
-      </View>
-    );
+    return <View style={[style, this.props.style]}>{this.props.children}</View>;
   }
 }
 
 module.exports = BorderBox;
-

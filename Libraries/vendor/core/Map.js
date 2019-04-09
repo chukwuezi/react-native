@@ -1,9 +1,10 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
+ * @format
  * @preventMunge
  * @typechecks
  */
@@ -14,7 +15,6 @@
 
 const _shouldPolyfillES6Collection = require('_shouldPolyfillES6Collection');
 const guid = require('guid');
-const isNode = require('fbjs/lib/isNode');
 const toIterator = require('toIterator');
 
 module.exports = (function(global, undefined) {
@@ -25,6 +25,8 @@ module.exports = (function(global, undefined) {
   if (!_shouldPolyfillES6Collection('Map')) {
     return global.Map;
   }
+
+  const hasOwn = Object.prototype.hasOwnProperty;
 
   /**
    * == ES6 Map Collection ==
@@ -38,15 +40,17 @@ module.exports = (function(global, undefined) {
    *
    * https://people.mozilla.org/~jorendorff/es6-draft.html#sec-map-objects
    *
-   * There only two -- rather small -- diviations from the spec:
+   * There only two -- rather small -- deviations from the spec:
    *
-   * 1. The use of frozen objects as keys.
-   *    We decided not to allow and simply throw an error. The reason being is
-   *    we store a "hash" on the object for fast access to it's place in the
-   *    internal map entries.
-   *    If this turns out to be a popular use case it's possible to implement by
-   *    overiding `Object.freeze` to store a "hash" property on the object
-   *    for later use with the map.
+   * 1. The use of untagged frozen objects as keys.
+   *    We decided not to allow and simply throw an error, because this
+   *    implementation of Map works by tagging objects used as Map keys
+   *    with a secret hash property for fast access to the object's place
+   *    in the internal _mapData array. However, to limit the impact of
+   *    this spec deviation, Libraries/Core/InitializeCore.js also wraps
+   *    Object.freeze, Object.seal, and Object.preventExtensions so that
+   *    they tag objects before making them non-extensible, by inserting
+   *    each object into a Map and then immediately removing it.
    *
    * 2. The `size` property on a map object is a regular property and not a
    *    computed property on the prototype as described by the spec.
@@ -96,11 +100,7 @@ module.exports = (function(global, undefined) {
     SECRET_SIZE_PROP = '$size' + guid();
   }
 
-  // In oldIE we use the DOM Node `uniqueID` property to get create the hash.
-  const OLD_IE_HASH_PREFIX = 'IE_HASH_';
-
   class Map {
-
     /**
      * 23.1.1.1
      * Takes an `iterable` which is basically any object that implements a
@@ -163,10 +163,7 @@ module.exports = (function(global, undefined) {
       if (index != null && this._mapData[index]) {
         this._mapData[index][1] = value;
       } else {
-        index = this._mapData.push([
-          key,
-          value
-        ]) - 1;
+        index = this._mapData.push([key, value]) - 1;
         setIndex(this, key, index);
         if (__DEV__) {
           this[SECRET_SIZE_PROP] += 1;
@@ -193,7 +190,6 @@ module.exports = (function(global, undefined) {
         return this._mapData[index][1];
       }
     }
-
 
     /**
      * 23.1.3.3
@@ -282,7 +278,6 @@ module.exports = (function(global, undefined) {
   Map.prototype[toIterator.ITERATOR_SYMBOL] = Map.prototype.entries;
 
   class MapIterator {
-
     /**
      * 23.1.5.1
      * Create a `MapIterator` for a given `map`. While this class is private it
@@ -454,22 +449,22 @@ module.exports = (function(global, undefined) {
         // If the `SECRET_SIZE_PROP` property is already defined then we're not
         // in the first call to `initMap` (e.g. coming from `map.clear()`) so
         // all we need to do is reset the size without defining the properties.
-        if (map.hasOwnProperty(SECRET_SIZE_PROP)) {
+        if (hasOwn.call(map, SECRET_SIZE_PROP)) {
           map[SECRET_SIZE_PROP] = 0;
         } else {
           Object.defineProperty(map, SECRET_SIZE_PROP, {
             value: 0,
-            writable: true
+            writable: true,
           });
           Object.defineProperty(map, 'size', {
-            set: (v) => {
+            set: v => {
               console.error(
                 'PLEASE FIX ME: You are changing the map size property which ' +
-                'should not be writable and will break in production.'
+                  'should not be writable and will break in production.',
               );
               throw new Error('The map size property is not writable.');
             },
-            get: () => map[SECRET_SIZE_PROP]
+            get: () => map[SECRET_SIZE_PROP],
           });
         }
 
@@ -528,38 +523,13 @@ module.exports = (function(global, undefined) {
     }
   }
 
-  /**
-   * IE has a `uniqueID` set on every DOM node. So we construct the hash from
-   * this uniqueID to avoid memory leaks and the IE cloneNode bug where it
-   * clones properties in addition to the attributes.
-   *
-   * @param {object} node
-   * @return {?string}
-   */
-  function getIENodeHash(node) {
-    let uniqueID;
-    switch (node.nodeType) {
-      case 1: // Element
-        uniqueID = node.uniqueID;
-        break;
-      case 9: // Document
-        uniqueID = node.documentElement.uniqueID;
-        break;
-      default:
-        return null;
-    }
-
-    if (uniqueID) {
-      return  OLD_IE_HASH_PREFIX + uniqueID;
-    } else {
-      return null;
-    }
-  }
-
   const getHash = (function() {
     const propIsEnumerable = Object.prototype.propertyIsEnumerable;
-    const hashProperty = guid();
+    const hashProperty = '__MAP_POLYFILL_INTERNAL_HASH__';
     let hashCounter = 0;
+
+    const nonExtensibleObjects = [];
+    const nonExtensibleHashes = [];
 
     /**
      * Get the "hash" associated with an object.
@@ -567,52 +537,52 @@ module.exports = (function(global, undefined) {
      * @param {object|array|function|regexp} o
      * @return {number}
      */
-    return function getHash(o) { // eslint-disable-line no-shadow
-      if (o[hashProperty]) {
-        return o[hashProperty];
-      } else if (!isES5 &&
-                  o.propertyIsEnumerable &&
-                  o.propertyIsEnumerable[hashProperty]) {
-        return o.propertyIsEnumerable[hashProperty];
-      } else if (!isES5 &&
-                  isNode(o) &&
-                  getIENodeHash(o)) {
-        return getIENodeHash(o);
-      } else if (!isES5 && o[hashProperty]) {
+    return function getHash(o) {
+      if (hasOwn.call(o, hashProperty)) {
         return o[hashProperty];
       }
 
+      if (!isES5) {
+        if (
+          hasOwn.call(o, 'propertyIsEnumerable') &&
+          hasOwn.call(o.propertyIsEnumerable, hashProperty)
+        ) {
+          return o.propertyIsEnumerable[hashProperty];
+        }
+      }
+
       if (isExtensible(o)) {
-        hashCounter += 1;
         if (isES5) {
           Object.defineProperty(o, hashProperty, {
             enumerable: false,
             writable: false,
             configurable: false,
-            value: hashCounter
+            value: ++hashCounter,
           });
-        } else if (o.propertyIsEnumerable) {
+          return hashCounter;
+        }
+
+        if (o.propertyIsEnumerable) {
           // Since we can't define a non-enumerable property on the object
           // we'll hijack one of the less-used non-enumerable properties to
-          // save our hash on it. Addiotionally, since this is a function it
+          // save our hash on it. Additionally, since this is a function it
           // will not show up in `JSON.stringify` which is what we want.
           o.propertyIsEnumerable = function() {
             return propIsEnumerable.apply(this, arguments);
           };
-          o.propertyIsEnumerable[hashProperty] = hashCounter;
-        } else if (isNode(o)) {
-          // At this point we couldn't get the IE `uniqueID` to use as a hash
-          // and we couldn't use a non-enumerable property to exploit the
-          // dontEnum bug so we simply add the `hashProperty` on the node
-          // itself.
-          o[hashProperty] = hashCounter;
-        } else {
-          throw new Error('Unable to set a non-enumerable property on object.');
+          return (o.propertyIsEnumerable[hashProperty] = ++hashCounter);
         }
-        return hashCounter;
-      } else {
-        throw new Error('Non-extensible objects are not allowed as keys.');
       }
+
+      // If the object is not extensible, fall back to storing it in an
+      // array and using Array.prototype.indexOf to find it.
+      let index = nonExtensibleObjects.indexOf(o);
+      if (index < 0) {
+        index = nonExtensibleObjects.length;
+        nonExtensibleObjects[index] = o;
+        nonExtensibleHashes[index] = ++hashCounter;
+      }
+      return nonExtensibleHashes[index];
     };
   })();
 

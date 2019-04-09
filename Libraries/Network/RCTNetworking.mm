@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -14,7 +14,6 @@
 #import <React/RCTLog.h>
 #import <React/RCTNetworkTask.h>
 #import <React/RCTNetworking.h>
-#import <React/RCTURLRequestHandler.h>
 #import <React/RCTUtils.h>
 
 #import "RCTHTTPRequestHandler.h"
@@ -50,6 +49,12 @@ static NSString *RCTGenerateFormBoundary()
   const char *boundaryChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.";
 
   char *bytes = (char*)malloc(boundaryLength);
+  if (!bytes) {
+    // CWE - 391 : Unchecked error condition
+    // https://www.cvedetails.com/cwe-details/391/Unchecked-Error-Condition.html
+    // https://eli.thegreenplace.net/2009/10/30/handling-out-of-memory-conditions-in-c
+    abort();
+  }
   size_t charCount = strlen(boundaryChars);
   for (int i = 0; i < boundaryLength; i++) {
     bytes[i] = boundaryChars[arc4random_uniform((u_int32_t)charCount)];
@@ -129,6 +134,7 @@ static NSString *RCTGenerateFormBoundary()
   NSMutableDictionary<NSNumber *, RCTNetworkTask *> *_tasksByRequestID;
   std::mutex _handlersLock;
   NSArray<id<RCTURLRequestHandler>> *_handlers;
+  NSArray<id<RCTURLRequestHandler>> * (^_handlersProvider)(void);
   NSMutableArray<id<RCTNetworkingRequestHandler>> *_requestHandlers;
   NSMutableArray<id<RCTNetworkingResponseHandler>> *_responseHandlers;
 }
@@ -137,8 +143,21 @@ static NSString *RCTGenerateFormBoundary()
 
 RCT_EXPORT_MODULE()
 
+- (instancetype)initWithHandlersProvider:(NSArray<id<RCTURLRequestHandler>> * (^)(void))getHandlers
+{
+  if (self = [super init]) {
+    _handlersProvider = getHandlers;
+  }
+  return self;
+}
+
 - (void)invalidate
 {
+  for (NSNumber *requestID in _tasksByRequestID) {
+    [_tasksByRequestID[requestID] cancel];
+  }
+  [_tasksByRequestID removeAllObjects];
+  _handlers = nil;
   _requestHandlers = nil;
   _responseHandlers = nil;
 }
@@ -163,8 +182,14 @@ RCT_EXPORT_MODULE()
     std::lock_guard<std::mutex> lock(_handlersLock);
 
     if (!_handlers) {
+      if (_handlersProvider) {
+        _handlers = _handlersProvider();
+      } else {
+        _handlers = [self.bridge modulesConformingToProtocol:@protocol(RCTURLRequestHandler)];
+      }
+
       // Get handlers, sorted in reverse priority order (highest priority first)
-      _handlers = [[self.bridge modulesConformingToProtocol:@protocol(RCTURLRequestHandler)] sortedArrayUsingComparator:^NSComparisonResult(id<RCTURLRequestHandler> a, id<RCTURLRequestHandler> b) {
+      _handlers = [_handlers sortedArrayUsingComparator:^NSComparisonResult(id<RCTURLRequestHandler> a, id<RCTURLRequestHandler> b) {
         float priorityA = [a respondsToSelector:@selector(handlerPriority)] ? [a handlerPriority] : 0;
         float priorityB = [b respondsToSelector:@selector(handlerPriority)] ? [b handlerPriority] : 0;
         if (priorityA > priorityB) {

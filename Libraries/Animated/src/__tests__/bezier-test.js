@@ -1,10 +1,15 @@
 /**
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
  * BezierEasing - use bezier curve for transition easing function
  * https://github.com/gre/bezier-easing
  *
  * @copyright 2014-2015 Gaetan Renaudeau. MIT License.
- * @noflow
  * @emails oncall+react_native
+ * @flow
  * @format
  */
 
@@ -39,7 +44,7 @@ function allEquals(be1, be2, samples, assertion) {
 function repeat(n) {
   return function(f) {
     for (let i = 0; i < n; ++i) {
-      f(i);
+      f();
     }
   };
 }
@@ -74,7 +79,10 @@ describe('bezier', function() {
   describe('common properties', function() {
     it('should be the right value at extremes', function() {
       repeat(10)(function() {
-        const a = Math.random(), b = 2 * Math.random() - 0.5, c = Math.random(), d = 2 * Math.random() - 0.5;
+        const a = Math.random(),
+          b = 2 * Math.random() - 0.5,
+          c = Math.random(),
+          d = 2 * Math.random() - 0.5;
         const easing = bezier(a, b, c, d);
         expect(easing(0)).toBe(0);
         expect(easing(1)).toBe(1);
@@ -83,7 +91,10 @@ describe('bezier', function() {
 
     it('should approach the projected value of its x=y projected curve', function() {
       repeat(10)(function() {
-        const a = Math.random(), b = Math.random(), c = Math.random(), d = Math.random();
+        const a = Math.random(),
+          b = Math.random(),
+          c = Math.random(),
+          d = Math.random();
         const easing = bezier(a, b, c, d);
         const projected = bezier(b, a, d, c);
         const composed = function(x) {
@@ -96,7 +107,10 @@ describe('bezier', function() {
   describe('two same instances', function() {
     it('should be strictly equals', function() {
       repeat(10)(function() {
-        const a = Math.random(), b = 2 * Math.random() - 0.5, c = Math.random(), d = 2 * Math.random() - 0.5;
+        const a = Math.random(),
+          b = 2 * Math.random() - 0.5,
+          c = Math.random(),
+          d = 2 * Math.random() - 0.5;
         allEquals(bezier(a, b, c, d), bezier(a, b, c, d), 100, 0);
       });
     });
@@ -104,14 +118,20 @@ describe('bezier', function() {
   describe('symetric curves', function() {
     it('should have a central value y~=0.5 at x=0.5', function() {
       repeat(10)(function() {
-        const a = Math.random(), b = 2 * Math.random() - 0.5, c = 1 - a, d = 1 - b;
+        const a = Math.random(),
+          b = 2 * Math.random() - 0.5,
+          c = 1 - a,
+          d = 1 - b;
         const easing = bezier(a, b, c, d);
         assertClose(easing(0.5), 0.5, 2);
       });
     });
     it('should be symmetrical', function() {
       repeat(10)(function() {
-        const a = Math.random(), b = 2 * Math.random() - 0.5, c = 1 - a, d = 1 - b;
+        const a = Math.random(),
+          b = 2 * Math.random() - 0.5,
+          c = 1 - a,
+          d = 1 - b;
         const easing = bezier(a, b, c, d);
         const sym = function(x) {
           return 1 - easing(1 - x);

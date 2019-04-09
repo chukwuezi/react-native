@@ -1,22 +1,24 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
+ *
+ * @format
  */
+
 'use strict';
 
-const MockNativeMethods = require.requireActual('./MockNativeMethods');
-const mockComponent = require.requireActual('./mockComponent');
+const MockNativeMethods = jest.requireActual('./MockNativeMethods');
+const mockComponent = jest.requireActual('./mockComponent');
 
-require.requireActual('../Libraries/polyfills/babelHelpers.js');
-require.requireActual('../Libraries/polyfills/Object.es7.js');
-require.requireActual('../Libraries/polyfills/error-guard');
+jest.requireActual('../Libraries/polyfills/Object.es7.js');
+jest.requireActual('../Libraries/polyfills/error-guard');
 
 global.__DEV__ = true;
 
-global.Promise = require.requireActual('promise');
-global.regeneratorRuntime = require.requireActual('regenerator-runtime/runtime');
+global.Promise = jest.requireActual('promise');
+global.regeneratorRuntime = jest.requireActual('regenerator-runtime/runtime');
 
 global.requestAnimationFrame = function(callback) {
   return setTimeout(callback, 0);
@@ -25,9 +27,7 @@ global.cancelAnimationFrame = function(id) {
   clearTimeout(id);
 };
 
-jest
-  .mock('setupDevtools')
-  .mock('npmlog');
+jest.mock('setupDevtools');
 
 // there's a __mock__ for it.
 jest.setMock('ErrorUtils', require('ErrorUtils'));
@@ -39,48 +39,27 @@ jest
   .mock('TextInput', () => mockComponent('TextInput'))
   .mock('Modal', () => mockComponent('Modal'))
   .mock('View', () => mockComponent('View', MockNativeMethods))
-  .mock('RefreshControl', () => require.requireMock('RefreshControlMock'))
-  .mock('ScrollView', () => require.requireMock('ScrollViewMock'))
-  .mock(
-    'ActivityIndicator',
-    () => mockComponent('ActivityIndicator'),
-  )
-  .mock('ListView', () => require.requireMock('ListViewMock'))
-  .mock('ListViewDataSource', () => {
-    const DataSource = require.requireActual('ListViewDataSource');
-    DataSource.prototype.toJSON = function() {
-      function ListViewDataSource(dataBlob) {
-        this.items = 0;
-        // Ensure this doesn't throw.
-        try {
-          Object.keys(dataBlob).forEach(key => {
-            this.items += dataBlob[key] && (
-              dataBlob[key].length || dataBlob[key].size || 0
-            );
-          });
-        } catch (e) {
-          this.items = 'unknown';
-        }
-      }
-
-      return new ListViewDataSource(this._dataBlob);
-    };
-    return DataSource;
-  })
+  .mock('RefreshControl', () => jest.requireMock('RefreshControlMock'))
+  .mock('ScrollView', () => jest.requireMock('ScrollViewMock'))
+  .mock('ActivityIndicator', () => mockComponent('ActivityIndicator'))
   .mock('AnimatedImplementation', () => {
-    const AnimatedImplementation = require.requireActual('AnimatedImplementation');
+    const AnimatedImplementation = jest.requireActual('AnimatedImplementation');
     const oldCreate = AnimatedImplementation.createAnimatedComponent;
-    AnimatedImplementation.createAnimatedComponent = function(Component) {
-      const Wrapped = oldCreate(Component);
+    AnimatedImplementation.createAnimatedComponent = function(
+      Component,
+      defaultProps,
+    ) {
+      const Wrapped = oldCreate(Component, defaultProps);
       Wrapped.__skipSetNativeProps_FOR_TESTS_ONLY = true;
       return Wrapped;
     };
     return AnimatedImplementation;
   })
   .mock('ReactNative', () => {
-    const ReactNative = require.requireActual('ReactNative');
+    const ReactNative = jest.requireActual('ReactNative');
     const NativeMethodsMixin =
-      ReactNative.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED.NativeMethodsMixin;
+      ReactNative.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED
+        .NativeMethodsMixin;
 
     Object.assign(NativeMethodsMixin, MockNativeMethods);
     Object.assign(ReactNative.NativeComponent.prototype, MockNativeMethods);
@@ -89,8 +68,20 @@ jest
   })
   .mock('ensureComponentIsNative', () => () => true);
 
-const mockEmptyObject = {};
 const mockNativeModules = {
+  AccessibilityInfo: {
+    addEventListener: jest.fn(),
+    announceForAccessibility: jest.fn(),
+    fetch: jest.fn(),
+    isBoldTextEnabled: jest.fn(),
+    isGrayscaleEnabled: jest.fn(),
+    isInvertColorsEnabled: jest.fn(),
+    isReduceMotionEnabled: jest.fn(),
+    isReduceTransparencyEnabled: jest.fn(),
+    isScreenReaderEnabled: jest.fn(),
+    removeEventListener: jest.fn(),
+    setAccessibilityFocus: jest.fn(),
+  },
   AlertManager: {
     alertWithArgs: jest.fn(),
   },
@@ -99,16 +90,30 @@ const mockNativeModules = {
     removeEventListener: jest.fn(),
   },
   AsyncLocalStorage: {
-    multiGet: jest.fn((keys, callback) => process.nextTick(() => callback(null, []))),
-    multiSet: jest.fn((entries, callback) => process.nextTick(() => callback(null))),
-    multiRemove: jest.fn((keys, callback) => process.nextTick(() => callback(null))),
-    multiMerge: jest.fn((entries, callback) => process.nextTick(() => callback(null))),
+    multiGet: jest.fn((keys, callback) =>
+      process.nextTick(() => callback(null, [])),
+    ),
+    multiSet: jest.fn((entries, callback) =>
+      process.nextTick(() => callback(null)),
+    ),
+    multiRemove: jest.fn((keys, callback) =>
+      process.nextTick(() => callback(null)),
+    ),
+    multiMerge: jest.fn((entries, callback) =>
+      process.nextTick(() => callback(null)),
+    ),
     clear: jest.fn(callback => process.nextTick(() => callback(null))),
     getAllKeys: jest.fn(callback => process.nextTick(() => callback(null, []))),
   },
   BuildInfo: {
     appVersion: '0',
     buildVersion: '0',
+    getConstants() {
+      return {
+        appVersion: '0',
+        buildVersion: '0',
+      };
+    },
   },
   Clipboard: {
     setString: jest.fn(),
@@ -137,9 +142,6 @@ const mockNativeModules = {
     logout: jest.fn(),
     queryGraphPath: jest.fn((path, method, params, callback) => callback()),
   },
-  FbRelayNativeAdapter: {
-    updateCLC: jest.fn(),
-  },
   GraphPhotoUpload: {
     upload: jest.fn(),
   },
@@ -149,14 +151,12 @@ const mockNativeModules = {
     }),
   },
   ImageLoader: {
-    getSize: jest.fn(
-      (url) => Promise.resolve({width: 320, height: 240})
-    ),
+    getSize: jest.fn(url => Promise.resolve({width: 320, height: 240})),
     prefetchImage: jest.fn(),
   },
   ImageViewManager: {
-    getSize: jest.fn(
-      (uri, success) => process.nextTick(() => success(320, 240))
+    getSize: jest.fn((uri, success) =>
+      process.nextTick(() => success(320, 240)),
     ),
     prefetchImage: jest.fn(),
   },
@@ -166,40 +166,34 @@ const mockNativeModules = {
   },
   Linking: {
     openURL: jest.fn(),
-    canOpenURL: jest.fn(
-      () => Promise.resolve(true)
-    ),
+    canOpenURL: jest.fn(() => Promise.resolve(true)),
+    openSettings: jest.fn(),
     addEventListener: jest.fn(),
-    getInitialURL: jest.fn(
-      () => Promise.resolve()
-    ),
+    getInitialURL: jest.fn(() => Promise.resolve()),
     removeEventListener: jest.fn(),
+    sendIntent: jest.fn(),
   },
   LocationObserver: {
+    addListener: jest.fn(),
     getCurrentPosition: jest.fn(),
+    removeListeners: jest.fn(),
+    requestAuthorization: jest.fn(),
+    setConfiguration: jest.fn(),
     startObserving: jest.fn(),
     stopObserving: jest.fn(),
   },
   ModalFullscreenViewManager: {},
   NetInfo: {
-    fetch: jest.fn(
-      () => Promise.resolve()
-    ),
-    getConnectionInfo: jest.fn(
-      () => Promise.resolve()
-    ),
+    fetch: jest.fn(() => Promise.resolve()),
+    getConnectionInfo: jest.fn(() => Promise.resolve()),
     addEventListener: jest.fn(),
     removeEventListener: jest.fn(),
     isConnected: {
-      fetch: jest.fn(
-        () => Promise.resolve()
-      ),
+      fetch: jest.fn(() => Promise.resolve()),
       addEventListener: jest.fn(),
       removeEventListener: jest.fn(),
     },
-    isConnectionExpensive: jest.fn(
-      () => Promise.resolve()
-    ),
+    isConnectionExpensive: jest.fn(() => Promise.resolve()),
   },
   Networking: {
     sendRequest: jest.fn(),
@@ -215,12 +209,20 @@ const mockNativeModules = {
     getDeliveredNotifications: jest.fn(callback => process.nextTick(() => [])),
     removeDeliveredNotifications: jest.fn(),
     setApplicationIconBadgeNumber: jest.fn(),
-    getApplicationIconBadgeNumber: jest.fn(callback => process.nextTick(() => callback(0))),
+    getApplicationIconBadgeNumber: jest.fn(callback =>
+      process.nextTick(() => callback(0)),
+    ),
     cancelLocalNotifications: jest.fn(),
-    getScheduledLocalNotifications: jest.fn(callback => process.nextTick(() => callback())),
-    requestPermissions: jest.fn(() => Promise.resolve({alert: true, badge: true, sound: true})),
+    getScheduledLocalNotifications: jest.fn(callback =>
+      process.nextTick(() => callback()),
+    ),
+    requestPermissions: jest.fn(() =>
+      Promise.resolve({alert: true, badge: true, sound: true}),
+    ),
     abandonPermissions: jest.fn(),
-    checkPermissions: jest.fn(callback => process.nextTick(() => callback({alert: true, badge: true, sound: true}))),
+    checkPermissions: jest.fn(callback =>
+      process.nextTick(() => callback({alert: true, badge: true, sound: true})),
+    ),
     getInitialNotification: jest.fn(() => Promise.resolve(null)),
     addListener: jest.fn(),
     removeListeners: jest.fn(),
@@ -229,6 +231,7 @@ const mockNativeModules = {
     scriptURL: null,
   },
   StatusBarManager: {
+    HEIGHT: 42,
     setColor: jest.fn(),
     setStyle: jest.fn(),
     setHidden: jest.fn(),
@@ -251,6 +254,7 @@ const mockNativeModules = {
     createView: jest.fn(),
     dispatchViewManagerCommand: jest.fn(),
     focus: jest.fn(),
+    getViewManagerConfig: jest.fn(),
     setChildren: jest.fn(),
     manageChildren: jest.fn(),
     updateView: jest.fn(),
@@ -300,19 +304,15 @@ Object.keys(mockNativeModules).forEach(module => {
   }
 });
 
-jest
-  .doMock('NativeModules', () => mockNativeModules);
+jest.doMock('NativeModules', () => mockNativeModules);
 
 jest.doMock('requireNativeComponent', () => {
   const React = require('react');
 
-  return viewName => class extends React.Component {
-    render() {
-      return React.createElement(
-        viewName,
-        this.props,
-        this.props.children,
-      );
-    }
-  };
+  return viewName =>
+    class extends React.Component {
+      render() {
+        return React.createElement(viewName, this.props, this.props.children);
+      }
+    };
 });
